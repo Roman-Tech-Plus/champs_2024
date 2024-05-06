@@ -41,15 +41,21 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.drivetrain.SwerveDrive;
 
-import static frc.robot.Constants.Vision.kRobotToCam;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.Map.Entry;
 
+import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
+import static frc.robot.Constants.Vision.BACK_LEFT_CAMERA_NAME;
+import static frc.robot.Constants.Vision.BACK_RIGHT_CAMERA_NAME;
+import static frc.robot.Constants.Vision.FRONT_LEFT_CAMERA_NAME;
+import static frc.robot.Constants.Vision.FRONT_RIGHT_CAMERA_NAME;
 
 public class Robot extends TimedRobot {
-    public static final double PERIOD = 0.01;
+    public static final double PERIOD = 0.004;
     private SwerveDrive drivetrain;
     private Vision vision;
 
@@ -67,10 +73,11 @@ public class Robot extends TimedRobot {
     // simple PID controller to aim at the target
     private PIDController aimController = new PIDController(0.02, 0, 0);
 
-    GtsamInterface gtsamInterface = new GtsamInterface(List.of("sim_camera1"));
+    GtsamInterface gtsamInterface = new GtsamInterface(List.of(FRONT_LEFT_CAMERA_NAME, FRONT_RIGHT_CAMERA_NAME, BACK_LEFT_CAMERA_NAME, BACK_RIGHT_CAMERA_NAME));
     Field2d field = new Field2d();
 
-    private PhotonPipelineResult lastResult = new PhotonPipelineResult();
+    private HashMap<PhotonCamera, PhotonPipelineResult> cameraResMap;
+
 
     public Robot() {
         super(PERIOD);
@@ -88,61 +95,13 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
-        var loopStart = WPIUtilJNI.now();
 
         drivetrain.periodic();
 
         // Log values to the dashboard
         drivetrain.log();
 
-        // send updates to gtsam
-
-        Pose3d guess = null;
-        List<TagDetection> dets = new ArrayList<>();
-        long tagDetTime = 0;
-
-        var results = vision.getLatestResult();
-        if (results.getTimestampSeconds() != lastResult.getTimestampSeconds()) {
-            lastResult = results;
-            for (var result : results.getTargets()) {
-                dets.add(
-                        new TagDetection(result.getFiducialId(),
-                                result.getDetectedCorners()));
-            }
-
-            // Totally bogus extra latency
-            tagDetTime = loopStart - 10000;
-
-            if (results.getMultiTagResult().estimatedPose.isPresent && results.targets.size() >= 1) {
-                var pose = new Pose3d().transformBy(results.getMultiTagResult().estimatedPose.best);
-                // assume robot is sitting on the floor to better constraint guess
-                guess = new Pose3d(pose.toPose2d());
-
-            }
-
-            drivetrain.addVisionMeasurement(results, tagDetTime);
-
-            // Publish debug info to NT
-            List<Double> corns = new ArrayList<>();
-            for (var d : dets) {
-                for (var c : d.corners) {
-                    corns.add(c.x);
-                    corns.add(c.y);
-                }
-            }
-            SmartDashboard.putNumberArray("/meme/measured_corners", corns.toArray(new Double[0]));
-        } else {
-            // duplicate, drop it
-            // System.out.println("Duplicate");
-        }
-
-
-        // Send odometry updates
-        gtsamInterface.sendOdomUpdate(loopStart, drivetrain.getTwist(), guess);
-        // For each camera we have, send (maybe updated?) calibration and tag detection
-        // info
-        gtsamInterface.setCamIntrinsics("sim_camera1", vision.getCamIntrinsics());
-        gtsamInterface.sendVisionUpdate("sim_camera1", tagDetTime, dets, kRobotToCam);
+        vision.estimateRobotPose(drivetrain, gtsamInterface);
 
         field.getObject("latency_compensated_pose_est").setPose(
                 gtsamInterface.getLatencyCompensatedPoseEstimate().toPose2d());
@@ -174,28 +133,6 @@ public class Robot extends TimedRobot {
         }
     }
 
-    /**
-     * Estimate how hard to turn to aim at the SPEAKER
-     */
-    double getTurnPower() {
-        // Correct pose estimate with vision measurements
-        var visionEst = vision.getLatestResult();
-
-        if (visionEst.hasTargets()) {
-            // Look for the blue speaker
-            for (var target : visionEst.getTargets()) {
-                if (target.getFiducialId() == 7) {
-                    // found blue speaker! Aim at it purely based on yaw
-                    var anglePower = aimController.calculate(target.getYaw());
-
-                    return MathUtil.clamp(anglePower, -1, 1);
-                }
-            }
-        }
-
-        // no target found, give up
-        return 0;
-    }
 
     @Override
     public void teleopPeriodic() {
@@ -212,12 +149,7 @@ public class Robot extends TimedRobot {
         strafe = strafeLimiter.calculate(strafe);
 
         double turn;
-        // bound to "Z" on your keyboard
-        if (controller.getRawButton(1)) {
-            turn = getTurnPower();
-        } else {
-            turn = -controller.getRightX() * kDriveSpeed;
-        }
+        turn = -controller.getRightX() * kDriveSpeed;
 
         turn = turnLimiter.calculate(turn);
         turn = MathUtil.applyDeadband(turn, 0.1);

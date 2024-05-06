@@ -170,8 +170,15 @@
             },
             "double[]##v_/gtsam_meme/sim_camera1/input/cam_intrinsics": {
               "open": true
-            }
+            },
+            "open": true
           },
+          "open": true
+        }
+      },
+      "photonvision": {
+        "open": true,
+        "sim_camera1": {
           "open": true
         }
       },
@@ -214,7 +221,7 @@
             0.0,
             0.8500000238418579
           ],
-          "height": 193,
+          "height": 2,
           "series": [
             {
               "color": [
@@ -234,7 +241,7 @@
             0.0,
             0.8500000238418579
           ],
-          "height": 193,
+          "height": 2,
           "series": [
             {
               "color": [

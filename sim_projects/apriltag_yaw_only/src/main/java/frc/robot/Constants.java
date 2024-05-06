@@ -39,19 +39,24 @@ import edu.wpi.first.math.util.Units;
 
 public class Constants {
     public static class Vision {
-        public static final String kCameraName = "YOUR CAMERA NAME";
-        // Cam mounted facing forward, half a meter forward of center, half a meter up from center.
-        // public static final Transform3d kRobotToCam =
-        //         new Transform3d(new Translation3d(0.5, 0.0, 0.5), new Rotation3d(0, 0, 0));
-        public static final Transform3d kRobotToCam = new Transform3d(
-                new Translation3d(Units.inchesToMeters(11.838), Units.inchesToMeters(-12.861), Units.inchesToMeters(8.947)),
-                new Rotation3d(0, Units.degreesToRadians(-25), Units.degreesToRadians(-20))
-        );
-
-
-        // The layout of the AprilTags on the field
-        public static final AprilTagFieldLayout kTagLayout =
-                AprilTagFields.kDefaultField.loadAprilTagLayoutField();
+        public static final String BACK_RIGHT_CAMERA_NAME = "BackRightCam";
+        public static final Transform3d BACK_RIGHT_CAMERA_TRANS = new Transform3d(Units.inchesToMeters(-12.728), Units.inchesToMeters(-11.09), Units.inchesToMeters(8.722+1.094), new Rotation3d(0.0, Math.toRadians(-30.0), Math.toRadians(180-(18.0/2))));
+    
+        public static final String BACK_LEFT_CAMERA_NAME = "BackLeftCam";
+        public static final Transform3d BACK_LEFT_CAMERA_TRANS = new Transform3d(Units.inchesToMeters(-12.728), Units.inchesToMeters(11.09), Units.inchesToMeters(8.722+1.094), new Rotation3d(0.0, Math.toRadians(-30.0),(2*Math.PI -(2.78+(0.37/2)) )));
+    
+    
+        public static final String FRONT_LEFT_CAMERA_NAME = "FrontLeftCam";
+        public static final Transform3d FRONT_LEFT_CAMERA_TRANS = new Transform3d(Units.inchesToMeters(3.436), Units.inchesToMeters(10.789), Units.inchesToMeters(17.47+1.094), new Rotation3d(0.0, Math.toRadians(-10.5), Math.toRadians(45.0 - 1.4)));
+    
+    
+        public static final String FRONT_RIGHT_CAMERA_NAME = "FrontRightCam";
+        public static final Transform3d FRONT_RIGHT_CAMERA_TRANS = new Transform3d(Units.inchesToMeters(3.436), Units.inchesToMeters(-10.789), Units.inchesToMeters(17.47+1.094), new Rotation3d(0.0, Math.toRadians(-10.5), Math.toRadians(-45.0+4.5)));
+    
+        public static final String LIMELIGHT_NAME = "limelight";
+        public static final Transform3d LIMELIGHT_TRANS = new Transform3d();
+    
+        public static final AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT = AprilTagFields.kDefaultField.loadAprilTagLayoutField();
 
         // The standard deviations of our vision estimated poses, which affect correction rate
         // (Fake values. Experiment and determine estimation noise on an actual robot.)

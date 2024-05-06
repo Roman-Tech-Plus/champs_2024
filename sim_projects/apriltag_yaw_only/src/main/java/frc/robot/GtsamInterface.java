@@ -47,6 +47,8 @@ public class GtsamInterface {
     // Estimated odom-only location relative to robot boot
     Pose3d localOdometryPose = new Pose3d();
     TimeInterpolatableBuffer<Pose3d> odometryBuffer = TimeInterpolatableBuffer.createBuffer(5);
+    
+    private boolean hasBeenSeededWithGuess;
 
     public GtsamInterface(List<String> cameraNames) {
         odomPub = NetworkTableInstance.getDefault()
@@ -60,6 +62,7 @@ public class GtsamInterface {
                 .subscribe(null, PubSubOption.sendAll(true), PubSubOption.keepDuplicates(true));
 
         cameraNames.stream().map(CameraInterface::new).forEach(it -> cameras.put(it.name, it));
+        hasBeenSeededWithGuess = false;
     }
 
     /**
@@ -106,8 +109,11 @@ public class GtsamInterface {
         odomPub.set(odom, odomTime);
 
         if (guess != null) {
-            guessPub.set(guess, odomTime);
-            localOdometryPose = guess;
+            guessPub.set(guess);
+            if (!hasBeenSeededWithGuess) {
+                localOdometryPose = guess;
+                hasBeenSeededWithGuess = true;
+            }
         }
 
         localOdometryPose = localOdometryPose.exp(odom);

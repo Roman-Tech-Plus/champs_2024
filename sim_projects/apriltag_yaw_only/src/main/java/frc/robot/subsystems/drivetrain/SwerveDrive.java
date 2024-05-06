@@ -25,8 +25,7 @@
 package frc.robot.subsystems.drivetrain;
 
 import static frc.robot.Constants.Swerve.*;
-import static frc.robot.Constants.Vision.kRobotToCam;
-import static frc.robot.Constants.Vision.kTagLayout;
+import static frc.robot.Constants.Vision.APRIL_TAG_FIELD_LAYOUT;
 
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
@@ -359,13 +358,5 @@ public class SwerveDrive {
 
         return twist3;
     }
-
-    PhotonPoseEstimator photonEst = new PhotonPoseEstimator(kTagLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, kRobotToCam);
-    public void addVisionMeasurement(PhotonPipelineResult results, long tagDetTime) {
-        
-        var ret = photonEst.update(results);
-        if (ret.isPresent()) {
-            addVisionMeasurement(ret.get().estimatedPose.toPose2d(), tagDetTime / 1e6);
-        }
-    }
+   
 }
